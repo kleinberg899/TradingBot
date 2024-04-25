@@ -6,18 +6,6 @@ def string_to_date(string):
   string = string[6:]
   string.find('-')
 
-def string_to_date(string):
-  ind = string.find('-')
-  if ind != 4:
-    print("datumfalsch hs")
-  year = string[0:4]
-  string = string[5:]
-  ind = string.find('-')
-  month = string[:ind]
-  day = string[ind + 1:]
-  return year, month, day
-
-
 
 class Environment:
   def __init__(self, path_to_data_folder):
