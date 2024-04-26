@@ -24,7 +24,7 @@ def date_to_string(year, month, day):
         return str(year) + '-0' + str(month) + '-0' + str(day)
 def main():
     print("Init:")
-    trading_market = Market_Environment(path, 2020, 1, 2, 2023,1,1)
+    trading_market = Market_Environment(path, 2020, 1, 2, 2024,4,15)
     bot1 = Bot_LinearRegression(path, stocks, trading_market)
     trading_market.create_agent(bot1, 100_000)
     print("Start:")
@@ -36,7 +36,7 @@ def main():
     print("Portfolio Wert")
     print(trading_market.calculate_portfolio_value(bot1))
     print("----------------------")
-    for i in range(100 * 5):
+    for i in range(900):
         trading_market.simulate_step()
         if i % 10 ==9:
             print(i, trading_market.simulated_date)
@@ -50,7 +50,7 @@ def main():
                     list.append((aktie,menge))
             print(list)
             print("Portfolio Wert")
-            print(trading_market.calculate_portfolio_value(bot1))
+            print(f"{trading_market.calculate_portfolio_value(bot1):.2f}")
             print("----------------------")
     print("Portfolio Wert")
     print(trading_market.calculate_portfolio_value(bot1))

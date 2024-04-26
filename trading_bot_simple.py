@@ -22,7 +22,7 @@ class Bot_LinearRegression():
         output = []
 
         prediction_date_buy = current_date + pd.offsets.DateOffset(years=1)
-        prediction_date_sell = current_date + pd.offsets.DateOffset(months=1)
+        prediction_date_sell = current_date + pd.offsets.DateOffset(days=31)
         context_size = 352
 
         current_prices_buy = []
@@ -100,7 +100,7 @@ class Bot_LinearRegression():
                 print(stock, "uuuff")
             else:
                 prediction_for_stock = sell_df.loc[sell_df['Stock'] == stock, 'Yield_Prediction'].values[0]
-                if prediction_for_stock <= 0.05:
+                if prediction_for_stock <= 0.00:
                     output.append(['sell', stock, portfolio[stock]])
 
         #Buy Behaviour
@@ -114,7 +114,7 @@ class Bot_LinearRegression():
             if yield_i >= 0.4:
                 stock = buy_df.iloc[i]['Stock']
                 price = buy_df.iloc[i]['Current']
-                randomfactor = torch.randint(0,20,(1,)).item() / 10
+                randomfactor = torch.randint(7,13,(1,)).item() / 5
                 amount = ((yield_i/sum_of_best_yields) * randomfactor * spending)/price
                 amount = int(amount)
                 if amount > 0:
