@@ -1,5 +1,5 @@
 import datetime
-import Environment as Env
+import Simple_Environment as Env
 import Bot_LinearRegression
 
 def date_to_string(year, month, day):
@@ -21,7 +21,7 @@ def main():
 
     prediction_date = date_to_string(end_year, end_month + 1, end_day+1)
     print(prediction_date)
-    env = Env.Environment('data/stock_data')
+    env = Env.Simple_Environment('data/stock_data')
 
     predictions = {}
     target = {}

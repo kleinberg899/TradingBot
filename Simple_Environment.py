@@ -19,7 +19,7 @@ def string_to_date(string):
 
 
 
-class Environment:
+class Simple_Environment:
   def __init__(self, path_to_data_folder):
 
     self.data_path = path_to_data_folder

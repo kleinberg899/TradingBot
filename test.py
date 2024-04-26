@@ -33,7 +33,16 @@ plt.show()
 context_size = 32
 dist_target_from_context = 8
 
+import pandas as pd
+import torch
+import yfinance as yf
+import datetime
 
+start_date = datetime.datetime(2019, 4, 1)
+end_date = datetime.datetime(2024, 4, 1)
+data = download_stock_data("AIR" +".DE", start_date, end_date)
+data_pd = pd.DataFrame(data)
+data_tensor = torch.tensor(data_pd.values)
 
 def get_batch(batch_size):
     ix = torch.randint(data_tensor.shape[0] - context_size, (batch_size,))
