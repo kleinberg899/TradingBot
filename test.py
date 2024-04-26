@@ -138,7 +138,7 @@ for epoch in range(epochs):
         loss.backward()
         optimizer.step()
         losses.append(loss.item())
-
+    #fds
     #print(loss.item())
     #print(torch.tensor(losses[-50:]).mean(0))
     print('epoch: ', epoch, torch.tensor(losses[-50:]).mean(0).item())
