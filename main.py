@@ -1,6 +1,7 @@
 import datetime
 import Simple_Environment as Env
 import Bot_LinearRegression
+import pandas as pd
 
 def date_to_string(year, month, day):
     if month >= 10 and day >= 10:
@@ -23,26 +24,54 @@ def main():
     print(prediction_date)
     env = Env.Simple_Environment('data/stock_data')
 
-    predictions = {}
-    target = {}
+    stocks = []
+    predictions = []
+    targets = []
+    currents = []
+    yield_predictions = []
+    yield_targets = []
 
 
     for stock in env.stocks:
 
-        # price prediction by the bot
-        profit = env.bot(stock, start_date, end_date, prediction_date)
-        if profit is not None:
-            predictions[stock] = profit
+        # price prediction
+        prediction = env.bot(stock, start_date, end_date, prediction_date)
+
+        if prediction is not None:
+
+            stocks.append(stock)
+            predictions.append(prediction)
+
             # lookup of the correct price in data
-            target[stock] = env.get_price(stock, prediction_date)
+            targets.append(env.get_price(stock, prediction_date))
 
-    sorted_dict = dict(sorted(predictions.items(), key=lambda item: item[1], reverse=True))
+            # compute relative price increase/decrease
+            currents.append(env.get_price(stock, end_date))
+            yield_predictions.append((prediction - currents[-1]) / currents[-1])
+            yield_targets.append((targets[-1] - currents[-1]) / currents[-1])
 
-    print("Stock, prediction, target, difference")
-    for key, value in sorted_dict.items():
-        print(f"{key}, {value:.4f}, {target[key]:.4f}, {(target[key]-value):.4f}")
+    # sort all lists by largests predicted yields
+    sorted_indices = sorted(range(len(yield_predictions)), key=lambda k: yield_predictions[k], reverse=True)
 
+    sorted_stocks = [stocks[i] for i in sorted_indices]
+    sorted_predictions = [predictions[i] for i in sorted_indices]
+    sorted_targets = [targets[i] for i in sorted_indices]
+    sorted_currents = [currents[i] for i in sorted_indices]
+    sorted_yield_predictions = [yield_predictions[i] for i in sorted_indices]
+    sorted_yield_targets = [yield_targets[i] for i in sorted_indices]
 
+    result_df = pd.DataFrame({
+        'Stock': sorted_stocks,
+        'Prediction': sorted_predictions,
+        'Target': sorted_targets,
+        'Difference': [target - current for target, current in zip(sorted_targets, sorted_currents)],
+        'Yield_Prediction': sorted_yield_predictions,
+        'Yield_Target': sorted_yield_targets,
+        'Yield_Difference': [yield_target - yield_prediction for yield_target, yield_prediction in
+                             zip(sorted_yield_targets, sorted_yield_predictions)]
+    })
+
+    print(result_df.to_string())
 
 
 # Press the green button in the gutter to run the script.
