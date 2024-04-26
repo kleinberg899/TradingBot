@@ -3,6 +3,7 @@ from pandas import read_csv
 from scipy import stats
 from sklearn.linear_model import LinearRegression
 import warnings
+import torch
 
 # Warnungen unterdrücken
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -90,34 +91,34 @@ class Bot_LinearRegression():
         })
 
         portfolio = self.environment.get_my_portfolio(self)
-        print(portfolio)
 
-        #Sell Behaviour
-        print("---")
 
-        print("---")
         for stock in self.stocks:
             if portfolio[stock] == 0:
                 continue
+            elif sell_df.shape[0] == 0:
+                print(stock, "uuuff")
             else:
                 prediction_for_stock = sell_df.loc[sell_df['Stock'] == stock, 'Yield_Prediction'].values[0]
-                if prediction_for_stock <= 0.0:
+                if prediction_for_stock <= 0.05:
                     output.append(['sell', stock, portfolio[stock]])
 
         #Buy Behaviour
 
-        spending = self.environment.get_my_balance(self) * 0.1
+        spending = self.environment.get_my_balance(self) * 0.05
 
         sum_of_best_yields = buy_df['Yield_Prediction'].head(5).sum()
 
-        for i in range(5):
+        for i in range(10):
             yield_i = buy_df.iloc[i]['Yield_Prediction']
             if yield_i >= 0.4:
                 stock = buy_df.iloc[i]['Stock']
                 price = buy_df.iloc[i]['Current']
-                amount = ((yield_i/sum_of_best_yields) * spending)/price
+                randomfactor = torch.randint(0,20,(1,)).item() / 10
+                amount = ((yield_i/sum_of_best_yields) * randomfactor * spending)/price
                 amount = int(amount)
-                output.append(['buy', stock, amount])
+                if amount > 0:
+                    output.append(['buy', stock, amount])
         return output
 
 

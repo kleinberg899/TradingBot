@@ -37,13 +37,12 @@ class Market_Environment:
 
         self.prices = {}
         for stock in self.stocks:
-            print(stock)
             self.prices[stock] = self.load_stock_data(stock)
     def get_price_df(self,stock):
         return self.prices[stock]
     def increment_date_day(self):
         # Über pd.Timedelta einen Tag hinzufügen
-        self.simulated_date = self.simulated_date + pd.Timedelta(days=14)
+        self.simulated_date = self.simulated_date + pd.Timedelta(days=1)
         return self.simulated_date
 
     def get_simulated_date(self):
@@ -70,9 +69,8 @@ class Market_Environment:
     def simulate_step(self):
         self.increment_date_day()
         for agent in self.agents:
-            moves = agent(
-                self.simulated_date)  # expects a list of moves, each move is a list, where move[0] = "buy" or "sell", move[1] = stock, move[2] = amount
-            print(moves)
+            moves = agent(self.simulated_date)  # expects a list of moves, each move is a list, where move[0] = "buy" or "sell", move[1] = stock, move[2] = amount
+
             for move in moves:
                 amount = move[2]
                 stock = move[1]
@@ -85,9 +83,10 @@ class Market_Environment:
                     if self.portfolios[agent].increase_balance(-amount * price):
                         self.portfolios[agent].increase_stock_amount(stock, amount)
                     else:
-                        print("Agent ", self.dict_agent_id[agent], "tried to make illegal move: ")
-                        print(["buy/sell", "stock", "amount"])
-                        print(move)
+                        ...
+                        #print("Agent ", self.dict_agent_id[agent], "tried to make illegal move: ")
+                        #print(["buy/sell", "stock", "amount"])
+                        #print(move)
                 elif move[0] == 'sell':
                     if self.portfolios[agent].increase_stock_amount(stock, -amount):
                         self.portfolios[agent].increase_balance(amount * price)

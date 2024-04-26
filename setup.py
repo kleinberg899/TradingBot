@@ -30,7 +30,7 @@ dax_symbole = [
 for symbol in dax_symbole:
   print(symbol)
   start_date = datetime.datetime(2019, 4, 24)
-  end_date = datetime.datetime(2022, 6, 24)
+  end_date = datetime.datetime(2024, 1, 1)
 
   # Daten herunterladen
   data = download_stock_data(symbol +".DE", start_date, end_date)
