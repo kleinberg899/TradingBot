@@ -4,7 +4,6 @@ import datetime
 
 def download_stock_data(symbol, start_date, end_date):
     try:
-        # Daten von Yahoo Finance herunterladen
         data = yf.download(symbol, start=start_date, end=end_date)
         return data
     except Exception as e:
@@ -13,7 +12,6 @@ def download_stock_data(symbol, start_date, end_date):
 
 def save_to_csv(data, filename):
     try:
-        # Daten in eine CSV-Datei speichern
         data.to_csv(filename)
         print("Daten erfolgreich in", filename, "gespeichert.")
     except Exception as e:
@@ -52,21 +50,19 @@ eu_symbols = [
 ]
 
 indice_symbols = [
-    '^IRX',         # Euro interestrate
-    '^TNX',         # Dollar interestrate
-    'DAX',          # DAX
-    '^STOXX50E',    # EURO STOXX 50
-    '^GSPC',        # &P500
-    'XWD.TO',       # MSCI World
+    '^IRX',         
+    '^TNX',         
+    'DAX',          
+    '^STOXX50E',    
+    '^GSPC',        
+    'XWD.TO',       
 ]
-
 
 base_path = "/content/sample_data/stock_data_test4/"
 
 start_date = datetime.datetime(2020, 1, 2)
 end_date = datetime.datetime(2020, 2, 5)
 
-# Laden aller Indizes und Benennen der Spalten
 indices_data = {}
 for indice in indice_symbols:
     data = download_stock_data(indice, start_date, end_date)
@@ -74,27 +70,18 @@ for indice in indice_symbols:
         data = fill_missing_dates(data)
         indices_data[indice] = data.rename(columns={col: col + '_' + indice for col in data.columns})
 
-# Kombinieren der Indizes in einen DataFrame
 indices_df = pd.concat(indices_data.values(), axis=1)
 
-# Durchlaufen der Listen der Symbole
 for symbol_list in [dax_symbols, us_symbols, eu_symbols]:
     for symbol in symbol_list:
         print("Verarbeite Symbol:", symbol)
-        # Daten für das Unternehmen herunterladen
         data = download_stock_data(symbol, start_date, end_date)
         if data is not None:
             df = pd.DataFrame(data)
             df = df.drop(['Adj Close', 'Open'], axis=1)
             df = fill_missing_dates(df)
-
-            # Indizes an die Aktiendaten anhängen
             df_with_indices = pd.concat([df, indices_df], axis=1)
-
-            # Spalte 'Date' sicherstellen
             df_with_indices['Date'] = df_with_indices.index
-
-            # Speichern der Daten in CSV
             path = base_path + symbol + ".csv"
             save_to_csv(df_with_indices, path)
         else:
