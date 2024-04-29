@@ -4,18 +4,24 @@ from scipy import stats
 from sklearn.linear_model import LinearRegression
 import warnings
 import torch
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 
 # Warnungen unterdrücken
 warnings.filterwarnings("ignore", category=UserWarning)
 
 from Market_Environment import Market_Environment
+
+
 class Bot_LinearRegression():
 
-    def __init__(self, path_to_data_folder, stock_list, environment):
+    def __init__(self, path_to_data_folder, stock_list, environment, degree = 1, name = 'Linear_Reg_Bot'):
         self.data_path = path_to_data_folder
         self.stocks = stock_list
-
+        self.degree = degree
         self.environment = environment
+        self.name = name
 
     def __call__(self, current_date, ):
 
@@ -23,7 +29,7 @@ class Bot_LinearRegression():
 
         prediction_date_buy = current_date + pd.offsets.DateOffset(years=1)
         prediction_date_sell = current_date + pd.offsets.DateOffset(days=31)
-        context_size = 352
+        context_size = 356
 
         current_prices_buy = []
         stocks_buy = []
@@ -36,23 +42,25 @@ class Bot_LinearRegression():
         yield_predictions_sell = []
 
         for stock in self.stocks:
-            stock_data = self.environment.get_price_df(stock).copy()
 
-            current_price = stock_data['Close'].iloc[-1]
+            stock_df = self.environment.get_stock_data_df(stock, context_size).copy()
 
-            start_date = current_date + pd.Timedelta(days=-context_size)
-            stock_data = stock_data[(stock_data['Date'] >= start_date) & (stock_data['Date'] <= current_date)]
-            num_rows = stock_data.shape[0]
-            if num_rows <= 0:
+            if stock_df is None or stock_df.shape[0] <= 0:
                 continue
-            prediction_buy = self.linear_regression(stock_data, start_date, prediction_date_buy)
+
+            current_price = self.environment.get_price(stock, current_date)
+            if current_price == 0:
+                continue
+
+            prediction_buy = self.linear_regression_poly(stock_df, current_date, context_size, prediction_date_buy, self.degree)
+
             if prediction_buy is not None:
                 stocks_buy.append(stock)
                 current_prices_buy.append(current_price)
                 predictions_buy.append(prediction_buy)
                 yield_predictions_buy.append((prediction_buy - current_price) / current_price)
 
-            prediction_sell = self.linear_regression(stock_data, start_date, prediction_date_sell)
+            prediction_sell = self.linear_regression_poly(stock_df, current_date, context_size, prediction_date_sell, self.degree)
             if prediction_sell is not None:
                 stocks_sell.append(stock)
                 current_prices_sell.append(current_price)
@@ -92,7 +100,6 @@ class Bot_LinearRegression():
 
         portfolio = self.environment.get_my_portfolio(self)
 
-
         for stock in self.stocks:
             if portfolio[stock] == 0:
                 continue
@@ -103,7 +110,7 @@ class Bot_LinearRegression():
                 if prediction_for_stock <= 0.00:
                     output.append(['sell', stock, portfolio[stock]])
 
-        #Buy Behaviour
+        # Buy Behaviour
 
         spending = self.environment.get_my_balance(self) * 0.05
 
@@ -111,28 +118,39 @@ class Bot_LinearRegression():
 
         for i in range(10):
             yield_i = buy_df.iloc[i]['Yield_Prediction']
-            if yield_i >= 0.4:
+            if yield_i >= 0.2:
                 stock = buy_df.iloc[i]['Stock']
                 price = buy_df.iloc[i]['Current']
-                randomfactor = torch.randint(7,13,(1,)).item() / 5
-                amount = ((yield_i/sum_of_best_yields) * randomfactor * spending)/price
+                randomfactor = torch.randint(5, 15, (1,)).item() / 10
+                amount = ((yield_i / sum_of_best_yields) * randomfactor * spending) / price
                 amount = int(amount)
                 if amount > 0:
                     output.append(['buy', stock, amount])
         return output
 
+    def linear_regression_poly(self, data, current_date, context_size, prediction_date, degree=1):
 
-    def linear_regression(self, stock_data, start_date, prediction_date):
-        reference_date = pd.Timestamp(start_date)
+        start_date = current_date - pd.Timedelta(days=context_size)
         prediction_date = pd.Timestamp(prediction_date)
-        stock_data.loc[:, 'Days'] = (stock_data['Date'] - reference_date).dt.days
+
+        difference_in_days_prediction = (prediction_date - start_date).days
+
+        Y = data['Close'].values
+        X = np.arange(1, data.shape[0] + 1)
+        X = X.reshape(-1, 1)
+        scaler = StandardScaler()
+        X = scaler.fit_transform(X)
+        poly_features = PolynomialFeatures(degree)
+        X_poly = poly_features.fit_transform(X)
+
+        # Lineare Regression anpassen
         model = LinearRegression()
-        model.fit(stock_data[['Days']], stock_data['Close'])
-        days_difference = (prediction_date - reference_date).days
-        predictions = model.predict([[days_difference]])
+        model.fit(X_poly, Y)
+        prediction_day = np.array([difference_in_days_prediction]).reshape(-1, 1)
+        prediction_day_poly = poly_features.fit_transform(prediction_day)
+        predictions = model.predict(prediction_day_poly)
+
         return predictions[0]
-
-
 
     def plot_prediction(self, stock, start_date, end_date, prediction_date):
         ...  # soll plt erstellen

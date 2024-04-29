@@ -8,6 +8,15 @@ from pytrends.exceptions import ResponseError
 
 
 
+base_path = "data/stock_data/"
+
+start_date = datetime.datetime(2017, 1, 2)
+end_date = datetime.datetime(2024, 4, 28)
+
+
+
+
+
 def download_stock_data(symbol, start_date, end_date):
     try:
         # Daten von Yahoo Finance herunterladen
@@ -30,7 +39,7 @@ def fill_missing_dates(df):
     desired_index = pd.date_range(start_date, end_date)
     df = copy_df.reindex(desired_index)
     df['Volume'] = df['Volume'].fillna(0)
-    df = df.fillna(method='ffill')
+    df = df.ffill()
     df = df.fillna(0)
     return df
 
@@ -61,7 +70,7 @@ def fill_missing_dates_trends(df, start_date, end_date):
     copy_df = df.copy()
     desired_index = pd.date_range(start_date, end_date)
     df = copy_df.reindex(desired_index)
-    df = df.fillna(method='ffill')
+    df = df.ffill()
     df = df.fillna(0)
     return df
 
@@ -596,15 +605,6 @@ company_country_codes = {
 
 
 
-
-
-base_path = "/content/sample_data/stock_data_test2/"
-
-start_date = datetime.datetime(2020, 1, 2)
-end_date = datetime.datetime(2020, 2, 5)
-
-
-
 symbol_lists = [dax_symbols, us_symbols, eu_symbols]
 
 
@@ -623,7 +623,9 @@ for symbol_list in symbol_lists:
             df = pd.DataFrame(data)
             df = df.drop(['Adj Close', 'Open'], axis=1)
             df = fill_missing_dates(df)
-
+            df['Date'] = df.index
+            df['Date'] = pd.to_datetime(df['Date'])
+            df['Day_of_the_year'] = df['Date'].dt.dayofyear
             
             if symbol in dax_symbols:
                 geo = 'DE'

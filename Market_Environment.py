@@ -2,7 +2,7 @@ import Bot_LinearRegression as Bot
 import Portfolio
 import pandas as pd
 from pandas import read_csv
-import trading_bot_simple
+import trading_bot_linear_regression
 
 
 def date_to_string(year, month, day):
@@ -20,10 +20,11 @@ class Market_Environment:
     def __init__(self, path_to_data_folder, start_year, start_month, start_day, end_year, end_month, end_day):
         self.data_path = path_to_data_folder
         self.stocks = [
-            "ADS.DE", "AIR.DE", "ALV.DE", "BAS.DE", "BAYN.DE", "BEI.DE", "BMW.DE", "BNR.DE", "CBK.DE", "DTG.DE", # "CON.DE", "P911.DE",
-            "1COV.DE","DBK.DE", "DB1.DE", "DHL.DE", "DTE.DE", "EOAN.DE", "FRE.DE", "HNR1.DE", "HEI.DE",
+            "ADS.DE", "AIR.DE", "ALV.DE", "BAS.DE", "BAYN.DE", "BEI.DE", "BMW.DE", "BNR.DE", "CBK.DE",# "DTG.DE",
+            # "CON.DE", "P911.DE","SHL.DE",
+            "1COV.DE", "DBK.DE", "DB1.DE", "DHL.DE", "DTE.DE", "EOAN.DE", "FRE.DE", "HNR1.DE", "HEI.DE",
             "HEN3.DE", "IFX.DE", "MBG.DE", "MRK.DE", "MTX.DE", "MUV2.DE", "PAH3.DE", "QIA.DE", "RHM.DE",
-            "RWE.DE", "SAP.DE", "SRT3.DE", "SIE.DE", "ENR.DE", "SHL.DE", "SY1.DE", "VOW3.DE", "VNA.DE", "ZAL.DE"
+            "RWE.DE", "SAP.DE", "SRT3.DE", "SIE.DE", "ENR.DE", "SY1.DE", "VOW3.DE", "VNA.DE", "ZAL.DE"
         ]
         self.agent_count = 0
         self.agents = []
@@ -38,8 +39,11 @@ class Market_Environment:
         self.prices = {}
         for stock in self.stocks:
             self.prices[stock] = self.load_stock_data(stock)
-    def get_price_df(self,stock):
+
+
+    def get_data_df(self, stock):
         return self.prices[stock]
+
     def increment_date_day(self):
         # Über pd.Timedelta einen Tag hinzufügen
         self.simulated_date = self.simulated_date + pd.Timedelta(days=1)
@@ -50,7 +54,7 @@ class Market_Environment:
 
     def get_price(self, stock, date):
         # date = pd.Timestamp(date)
-        stock_data = self.get_price_df(stock)
+        stock_data = self.get_data_df(stock)
         num_rows = stock_data.shape[0]
         if num_rows <= 0:
             return None
@@ -59,6 +63,18 @@ class Market_Environment:
             return close_value[0]
         else:
             return 0
+
+    def get_stock_data_df(self, stock, context_size):
+        stock_data = self.get_data_df(stock)
+        num_rows = stock_data.shape[0]
+        if num_rows <= 0:
+            return None
+
+        end_date = self.simulated_date
+        start_date = end_date - pd.Timedelta(days=context_size)
+        stock_data['Date'] = pd.to_datetime(stock_data['Date'])
+        return stock_data.loc[(stock_data['Date'] <= end_date) & (stock_data['Date'] >= start_date)]
+
     def create_agent(self, bot, starting_balance):
         self.agents.append(bot)
         self.agent_count += 1
@@ -84,12 +100,13 @@ class Market_Environment:
                         self.portfolios[agent].increase_stock_amount(stock, amount)
                     else:
                         ...
-                        #print("Agent ", self.dict_agent_id[agent], "tried to make illegal move: ")
-                        #print(["buy/sell", "stock", "amount"])
-                        #print(move)
+                        # print("Agent ", self.dict_agent_id[agent], "tried to make illegal move: ")
+                        # print(["buy/sell", "stock", "amount"])
+                        # print(move)
                 elif move[0] == 'sell':
                     if self.portfolios[agent].increase_stock_amount(stock, -amount):
-                        self.portfolios[agent].increase_balance(amount * price)
+                        print("SELL!!!", agent.name, move[1], move[2], price,amount * price)
+                        answer = self.portfolios[agent].increase_balance(amount * price)
 
     def get_my_portfolio(self, bot):
         return self.portfolios[bot].get_portfolio()
@@ -99,45 +116,7 @@ class Market_Environment:
 
     def load_stock_data(self, stock):
         data = read_csv(self.data_path + '/' + stock + '.csv')
-
         df = pd.DataFrame(data)
-
-        # Umwandlung der 'Date'-Spalte in ein Datetime-Objekt
-        df['Date'] = pd.to_datetime(df['Date'])
-
-        # Erstellen eines vollständigen Datumsbereichs
-        date_range = pd.date_range(start=df['Date'].min(), end=df['Date'].max())
-
-        # Neuindexierung des DataFrame mit dem vollständigen Datumsbereich
-        df = df.set_index('Date').reindex(date_range).reset_index()
-        df = df.apply(pd.to_numeric)
-
-        # Funktion zur Aktualisierung der Werte
-        def update_values(row):
-            if pd.isna(row['Open']):
-                row['Open'] = row['Close']
-            if pd.isna(row['High']):
-                row['High'] = row['Close']
-            if pd.isna(row['Low']):
-                row['Low'] = row['Close']
-            if pd.isna(row['Close']):
-                row['Close'] = 0
-            if pd.isna(row['Adj Close']):
-                row['Adj Close'] = row['Close']
-            if pd.isna(row['Volume']):
-                row['Volume'] = 0
-            return row
-
-        last_close = None
-        for index, row in df.iterrows():
-            if not pd.isna(row['Close']):
-                last_close = row['Close']
-            else:
-                row['Close'] = last_close if last_close is not None else 0  # Ensure last_close is converted to appropriate data type
-            df.loc[index] = update_values(row)
-        df = df.fillna(0.0)
-        df.rename(columns={'index': 'Date'}, inplace=True)
-        df['Date'] = pd.to_datetime(df['Date'])
         return df
 
     def calculate_portfolio_value(self, agent):
