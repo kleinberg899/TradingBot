@@ -40,7 +40,7 @@ def print_bot_state(bot, env, show_portfolio = False):
         print(f"Balance: {env.get_my_balance(bot):.2f}, {list}\n")
 def main():
     print("Init:")
-    trading_market = Market_Environment(path, 2018, 1, 2, 2024,4,15)
+    trading_market = Market_Environment(path, 2022, 2, 4, 2024,4,15)
     bot1 = Bot_LinearRegression(path, stocks, trading_market)
     trading_market.create_agent(bot1, 100_000)
 
@@ -63,12 +63,9 @@ def main():
     for i in range(900):
         print(i, trading_market.simulated_date)
         trading_market.simulate_step()
-        if i % 25 ==0:
-            for bot in trading_market.agents:
-                if True:#i % 10 == 1:
-                    print_bot_state(bot, trading_market, show_portfolio=True)
-                else:
-                    print_bot_state(bot, trading_market, show_portfolio=False)
+        for bot in trading_market.agents:
+            if True:
+                print_bot_state(bot, trading_market, show_portfolio=True)
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main()

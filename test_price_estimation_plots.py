@@ -51,9 +51,9 @@ def load_stock_data(stock):
 start_year, start_month, start_day = 2017, 3, 1
 start_date = pd.Timestamp(start_year, start_month, start_day)
 
-prediction_days = 150
+prediction_days = 31
 
-days_data = 356 * 6
+days_data = 356 * 1
 
 end_date = start_date + pd.offsets.DateOffset(days_data - prediction_days)
 end_date_plot = start_date + pd.offsets.DateOffset(days_data)

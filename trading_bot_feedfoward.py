@@ -6,11 +6,11 @@ import warnings
 import torch
 import torch.nn as nn
 from torchmetrics.regression import MeanAbsolutePercentageError
+from Market_Environment import Market_Environment
 
 # Warnungen unterdrücken
 warnings.filterwarnings("ignore", category=UserWarning)
 
-from Market_Environment import Market_Environment
 
 
 def normalize_prices(data_tensor, col_position_of_target=2):
@@ -31,10 +31,10 @@ class Bot_FeedForward:
 
         self.context_size = context_size
         self.dist_target_from_context = 7
-        self.input_size = 7 * self.context_size
+        self.input_size = 5 * self.context_size
         self.col_position_of_target = 2
         self.columns_to_drop = ['Date']
-        self.input_size = 7 * context_size
+        self.input_size = 5 * context_size
 
         from FeedforwardNN import Model
 
@@ -64,16 +64,16 @@ class Bot_FeedForward:
             data_tensor = torch.tensor(stock_df.values[:, 1:].astype(float), dtype=torch.float32)
             data_tensor, norm_divisor = normalize_prices(data_tensor)
             prediction = self.feedforward(data_tensor.contiguous().view(-1)).item()
-            if prediction >= 1.15:
+            if prediction >= 1.005 and prediction < 1.1:
                 consider_buy.append((stock, prediction))
-            if prediction <= 1.01:
+            if prediction <= 0.995 and prediction > 0.9:
                 consider_sell.append((stock, prediction))
         consider_buy = sorted(consider_buy, key=lambda x: x[1], reverse=True)
         consider_sell = sorted(consider_sell, key=lambda x: x[1])
 
         #
         # buy behaviour
-        spending = self.environment.get_my_balance(self) * 0.05
+        spending = self.environment.get_my_balance(self) * 0.1
         num_stocks = 10
         if len(consider_buy) < 10:
             num_stocks = len(consider_buy)
@@ -83,9 +83,11 @@ class Bot_FeedForward:
         for i in range(num_stocks):
             stock = consider_buy[i][0]
             weight = (((consider_buy[i])[1] - 1) / sum_of_yields)
-            rnd_factor = torch.randint(5, 15, (1,)).item() / 10
+            #rnd_factor = torch.randint(5, 15, (1,)).item() / 10
             price = self.environment.get_price(stock, current_date)
-            amount = int((weight * rnd_factor * spending) / price)
+            #amount = int((weight * rnd_factor * spending) / price)
+            amount = int((weight * spending) / price)
+
 
             if amount > 0:
                 output.append(['buy', stock, amount])

@@ -633,9 +633,9 @@ for symbol_list in symbol_lists:
                 geo = 'US'
             else:
                 geo = company_country_codes[symbol]
-            df = merge_with_google_trends(df, symbol, start_date, end_date, geo, 'trends_lokal')
+            #df = merge_with_google_trends(df, symbol, start_date, end_date, geo, 'trends_lokal')
             geo = ''
-            df = merge_with_google_trends(df, symbol, start_date, end_date, geo, 'trends_global')
+            #df = merge_with_google_trends(df, symbol, start_date, end_date, geo, 'trends_global')
 
             
             path = base_path + symbol + ".csv"
