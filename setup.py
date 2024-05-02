@@ -1,14 +1,16 @@
 import yfinance as yf
 import pandas as pd
 import datetime
-#!pip install pytrends
+# !pip install pytrends
 from pytrends.request import TrendReq
 from pytrends.exceptions import ResponseError
 import time
-#!pip install pandas_ta
+# !pip install pandas_ta
 import pandas_ta as ta
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 
-#from stock_information import dax_symbols, us_symbols, eu_symbols, company_names, dax_business_fields, us_business_fields, eu_business_fields, indice_symbols, company_country_codes
+from stock_information import dax_symbols, us_symbols, eu_symbols, company_names, dax_business_fields, us_business_fields, eu_business_fields, indice_symbols, company_country_codes
 
 
 def download_stock_data(symbol, start_date, end_date):
@@ -21,6 +23,7 @@ def download_stock_data(symbol, start_date, end_date):
         print("Fehler beim Herunterladen der Daten für", symbol, ":", e)
         return None
 
+
 def save_to_csv(data, filename):
     try:
         # Daten in eine CSV-Datei speichern
@@ -28,6 +31,7 @@ def save_to_csv(data, filename):
         print("Daten erfolgreich in", filename, "gespeichert.")
     except Exception as e:
         print("Fehler beim Speichern der Daten:", e)
+
 
 def fill_missing_dates(df, start_date, end_date):
     copy_df = df.copy()
@@ -68,6 +72,7 @@ def fill_missing_dates_trends(df, start_date, end_date):
     df = df.fillna(0)
     return df
 
+
 def merge_with_google_trends(df, keyword, start_date, end_date, geo, col_name):
     print('Google request: ' + col_name, geo, keyword)
     company_name = company_names.get(keyword)
@@ -85,6 +90,7 @@ def merge_with_google_trends(df, keyword, start_date, end_date, geo, col_name):
     df_with_trends = pd.concat([df, trends_df], axis=1)
     return df_with_trends
 
+
 def combine_indices_data(indices, start_date, end_date):
     indices_data = {}
     for indice in indices:
@@ -97,26 +103,25 @@ def combine_indices_data(indices, start_date, end_date):
     indices_df = pd.concat(indices_data.values(), axis=1)
     return indices_df
 
+
 def compute_techincal_indicators(df):
-  data = df.copy()
-  data.ta.sma(length=20, append=True)  # Simple Moving Average (SMA) mit einer Periode von 20
-  data.ta.sma(length=50, append=True, slow=True)  # Langsamerer Simple Moving Average (SMA) mit einer Periode von 50
-  data.ta.ema(length=50, append=True, slow=True)  # Langsamerer Exponential Moving Average (EMA) mit einer Periode von 50
-  data.ta.ema(length=20, append=True)  # Exponential Moving Average (EMA) mit einer Periode von 20
-  data.ta.rsi(length=14, append=True)  # Relative Strength Index (RSI) mit einer Periode von 14
-  data.ta.bbands(length=20, append=True)  # Bollinger Bands mit einer Periode von 20
-  data.ta.macd(append=True)  # Moving Average Convergence Divergence (MACD)
-  data.ta.stoch(append=True)  # Stochastic Oscillator
-  data.ta.atr(length=14, append=True)  # Average True Range (ATR)
-  data.ta.obv(append=True)  # On-Balance Volume (OBV)
-  data.ta.adx(length=14, append=True)  # Average Directional Index (ADX)
-  return data
+    data = df.copy()
+    data.ta.sma(length=20, append=True)  # Simple Moving Average (SMA) mit einer Periode von 20
+    data.ta.sma(length=50, append=True, slow=True)  # Langsamerer Simple Moving Average (SMA) mit einer Periode von 50
+    data.ta.ema(length=50, append=True,
+                slow=True)  # Langsamerer Exponential Moving Average (EMA) mit einer Periode von 50
+    data.ta.ema(length=20, append=True)  # Exponential Moving Average (EMA) mit einer Periode von 20
+    data.ta.rsi(length=14, append=True)  # Relative Strength Index (RSI) mit einer Periode von 14
+    data.ta.bbands(length=20, append=True)  # Bollinger Bands mit einer Periode von 20
+    data.ta.macd(append=True)  # Moving Average Convergence Divergence (MACD)
+    data.ta.stoch(append=True)  # Stochastic Oscillator
+    data.ta.atr(length=14, append=True)  # Average True Range (ATR)
+    data.ta.obv(append=True)  # On-Balance Volume (OBV)
+    data.ta.adx(length=14, append=True)  # Average Directional Index (ADX)
+    return data
 
 
-
-
-
-base_path = "/content/drive/MyDrive/data/stock_data/"
+base_path = "data/stock_data/"
 
 start_date = datetime.datetime(2010, 1, 2)
 end_date = datetime.datetime(2024, 4, 30)
@@ -125,46 +130,52 @@ start_date_adj_for_ta = start_date - pd.Timedelta(days=50)
 
 stock_lists = [dax_symbols, us_symbols, eu_symbols]
 
-#download data for eahc stock
+# download data for eahc stock
 for stock_list in stock_lists:
     for stock in stock_list:
         print("#############################################################################################")
         print("#############################################################################################\n")
-        
+
         print("Verarbeite Symbol:", stock)
 
-        #downloaded startdate has to start to start before specidied start date because the slowest technical indicator takes 50 previous rows. These rows are droped again after ta computation
-        data = download_stock_data(stock, start_date_adj_for_ta, end_date) 
+        # downloaded startdate has to start to start before specidied start date because the slowest technical indicator takes 50 previous rows. These rows are droped again after ta computation
+        data = download_stock_data(stock, start_date_adj_for_ta, end_date)
         if data is not None:
 
-            #preprocessing
+            # preprocessing
             df = pd.DataFrame(data)
             df = fill_missing_dates(df, start_date_adj_for_ta, end_date)
 
-            #technical indicators
+            # technical indicators
             df = compute_techincal_indicators(df)
-            
-            
-            #google trends
+
+            # google trends
             geo = company_country_codes[stock]
             df = merge_with_google_trends(df, stock, start_date_adj_for_ta, end_date, geo, 'trends_lokal')
             geo = ''
             df = merge_with_google_trends(df, stock, start_date_adj_for_ta, end_date, geo, 'trends_global')
 
             # first 50 rows are just downloaded for technical indicators an can be droped afterwards
+
             df = df.drop(df.index[:50])
+            df.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
+            numeric_cols = ['Volume', 'BBL_20_2.0', 'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0',
+                            'MACD_12_26_9', 'MACDh_12_26_9', 'MACDs_12_26_9', 'STOCHk_14_3_3', 'STOCHd_14_3_3',
+                            'ATRr_14', 'OBV', 'ADX_14', 'DMP_14', 'DMN_14', 'RSI_14', 'trends_lokal', 'trends_global']
+            scaler = MinMaxScaler()
+            df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+
             path = base_path + stock + ".csv"
             save_to_csv(df, path)
         else:
             print("\nFehler beim Herunterladen der Daten für", stock)
 
-#download data to stock indices and save them in a seperate csv file
+# download data to stock indices and save them in a seperate csv file
 indice_df = combine_indices_data(indice_symbols, start_date, end_date)
 if indice_df is not None:
-  save_to_csv(indice_df, base_path + 'indices.csv')
+    save_to_csv(indice_df, base_path + 'indices.csv')
 
-
-#save data of each stocks buisnessfield and orgin country in csv
+# save data of each stocks buisnessfield and orgin country in csv
 all_labels = set(dax_business_fields.values()).union(set(us_business_fields.values()), set(eu_business_fields.values()))
 alphabetical_labels = sorted(all_labels)
 print("Alphabet:", alphabetical_labels)
