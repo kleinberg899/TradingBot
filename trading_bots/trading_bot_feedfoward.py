@@ -38,9 +38,9 @@ class Bot_FeedForward:
         self.columns_to_drop = ['Date']
 
 
-        from price_estimation.FeedforwardNN import Model
+        from price_estimation.More_Complex_Timeseries_NN import Model
 
-        self.feedforward = Model(self.input_size)
+        self.feedforward = Model(28, 365)
 
         checkpoint = torch.load('../models/model_feed_forward.pth')
 
@@ -65,7 +65,7 @@ class Bot_FeedForward:
             stock_df = stock_df.drop(self.columns_to_drop, axis=1)
             data_tensor = torch.tensor(stock_df.values.astype(float), dtype=torch.float32)
             data_tensor, norm_divisor = normalize_prices(data_tensor)
-            prediction = self.feedforward(data_tensor.contiguous().view(-1)).item()
+            prediction = self.feedforward(data_tensor).item()
             if prediction >= 1.00001:
                 consider_buy.append((stock, prediction))
             if prediction <= 0.95:

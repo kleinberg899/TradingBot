@@ -21,7 +21,10 @@ class Model(nn.Module):
     def forward(self, x):
         out = [self.relu(fc(x)) for fc in
                self.fc_layers]  # Durchlaufe alle Schichten und führe den ReLU-Aktivierungsfunktion aus
-        tmp = torch.cat(out, dim=1)  # Konkateniere die Ausgaben entlang der Dimension 1
+        if out[0].dim() == 2:
+            tmp = torch.cat(out, dim=1)  # Konkateniere die Ausgaben entlang der Dimension 1
+        else:
+            tmp = torch.cat(out, dim=0)
         tmp = self.relu(self.fc_almost_final(tmp))
         out = self.fc_final(tmp)
         return out

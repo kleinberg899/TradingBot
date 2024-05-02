@@ -4,7 +4,8 @@ import torch
 import datetime
 import numpy as np
 
-from price_estimation.FeedforwardNN import Model
+
+#from price_estimation.FeedforwardNN import Model
 from torchmetrics.regression import MeanAbsolutePercentageError
 
 # stocks to train the neural network
@@ -18,14 +19,18 @@ stocks = [
 
 # Hyperparameters
 
+from price_estimation.More_Complex_Timeseries_NN import Model
 context_size = 365
 dist_target_from_context = 7
-epochs = 400
-iterations_per_stock = 15
-batch_size = 64
-input_size = 28 * context_size
-learning_rate = 3e-5
+epochs = 1
+iterations_per_stock = 25
+batch_size = 32
+feature_size = 28
+learning_rate = 3e-4
 col_position_of_target = 3
+
+
+model = Model(feature_size, context_size)
 
 
 
@@ -59,7 +64,7 @@ def get_batch(batch_size, data_tensor, context_size, dist_target_from_context, c
 
 
 # Initialisiere das Modell
-model = Model(input_size)
+model = Model(feature_size, time_steps=365)
 
 # Initialisiere den Optimizer und den Loss
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
@@ -101,15 +106,13 @@ for epoch in range(epochs):
         xb, yb, _ = get_batch(batch_size, data_tensor, context_size, dist_target_from_context, col_position_of_target)
         # evaluate the loss
         B, T, C = xb.shape
-        prediction = model.forward(xb.view(B, T * C))
+        prediction = model.forward(xb)
         yb = yb.reshape(-1, 1)
         loss = loss_fn(prediction, yb)
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
         losses.append(loss.item())
-        if(steps == 9):
-            print('pred', prediction[0], 'target', yb[0], 'loss', loss)
     mean_loss = torch.tensor(losses[-10:]).mean().item()
     formatted_loss = "{:.5f}".format(mean_loss)
 
@@ -135,7 +138,7 @@ def check_accuracy(model, test_start_date, test_end_date):
         with torch.no_grad():
             B, T, C = test_x.shape
             print(B, T,C)
-            scores = model.forward(test_x.view(B, T * C))
+            scores = model.forward(test_x)
             test_loss = loss_fn(scores, test_y.view(-1, 1)).item()
             test_loss_list.append(test_loss)
             print('test loss on stock ', stock, '= ', test_loss)
