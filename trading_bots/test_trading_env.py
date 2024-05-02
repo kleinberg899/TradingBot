@@ -1,7 +1,4 @@
-import datetime
-import Simple_Environment as Env
 from trading_bot_linear_regression import Bot_LinearRegression
-import pandas as pd
 from Market_Environment import Market_Environment
 from trading_bot_feedfoward import Bot_FeedForward
 stocks = [
@@ -11,7 +8,7 @@ stocks = [
             "HEN3.DE", "IFX.DE", "MBG.DE", "MRK.DE", "MTX.DE", "MUV2.DE", "PAH3.DE", "QIA.DE", "RHM.DE",
             "RWE.DE", "SAP.DE", "SRT3.DE", "SIE.DE", "ENR.DE", "SY1.DE", "VOW3.DE", "VNA.DE", "ZAL.DE"
         ]
-path = 'data/stock_data'
+path = '../data/stock_data'
 
 
 def date_to_string(year, month, day):
@@ -41,8 +38,8 @@ def print_bot_state(bot, env, show_portfolio = False):
 def main():
     print("Init:")
     trading_market = Market_Environment(path, 2022, 2, 4, 2024,4,15)
-    bot1 = Bot_LinearRegression(path, stocks, trading_market)
-    trading_market.create_agent(bot1, 100_000)
+    #bot1 = Bot_LinearRegression(path, stocks, trading_market)
+    #trading_market.create_agent(bot1, 100_000)
 
     bot2 = Bot_FeedForward(path, stocks, trading_market)
     trading_market.create_agent(bot2, 100_000)
@@ -50,8 +47,8 @@ def main():
     bot3 = Bot_LinearRegression(path, stocks, trading_market, name = 'Bot_POLY_5', degree= 5)
     trading_market.create_agent(bot3, 100_000)
 
-    bot4 = Bot_LinearRegression(path, stocks, trading_market, name='Bot_POLY_15', degree=15)
-    trading_market.create_agent(bot4, 100_000)
+    #bot4 = Bot_LinearRegression(path, stocks, trading_market, name='Bot_POLY_15', degree=15)
+    #trading_market.create_agent(bot4, 100_000)
 
 
     print("\n\n")

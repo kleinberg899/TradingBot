@@ -1,48 +1,51 @@
-import pandas as pd
-from pandas import read_csv
-from scipy import stats
-from sklearn.linear_model import LinearRegression
 import warnings
 import torch
-import torch.nn as nn
-from torchmetrics.regression import MeanAbsolutePercentageError
-from Market_Environment import Market_Environment
 
 # Warnungen unterdrücken
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-
-def normalize_prices(data_tensor, col_position_of_target=2):
+def normalize_prices(data_tensor, col_position_of_target=3):
     x = data_tensor.clone()
     price_normalisation = x[-1, col_position_of_target]
+    cols_to_normalize = [0,1,2,3,4,6,7,8,9]
     if torch.any(price_normalisation == 0):
         print("TEILEN DURCH 0 DU HUND. BEHANDEL EXCEPTION")
         return None
-    data_tensor[:, :3] = data_tensor[:, :3] / price_normalisation
+    data_tensor[:, cols_to_normalize] = data_tensor[:, cols_to_normalize] / price_normalisation
     return data_tensor, price_normalisation.item()
 class Bot_FeedForward:
 
-    def __init__(self, path_to_data_folder, stock_list, environment, context_size=356, name='Feedforward_Bot'):
+    def __init__(self, path_to_data_folder, stock_list, environment, context_size=365, name='Feedforward_Bot'):
         self.data_path = path_to_data_folder
         self.stocks = stock_list
         self.environment = environment
         self.name = name
 
+        context_size = 365
+        dist_target_from_context = 7
+        epochs = 500
+        iterations_per_stock = 10
+        batch_size = 64
+        input_size = 27 * context_size
+        learning_rate = 3e-5
+        col_position_of_target = 3
+
         self.context_size = context_size
         self.dist_target_from_context = 7
-        self.input_size = 5 * self.context_size
-        self.col_position_of_target = 2
+        self.input_size = 28 * self.context_size
+        self.col_position_of_target = 3
         self.columns_to_drop = ['Date']
-        self.input_size = 5 * context_size
 
-        from FeedforwardNN import Model
+
+        from price_estimation.FeedforwardNN import Model
 
         self.feedforward = Model(self.input_size)
 
-        checkpoint = torch.load('models/model_feed_forward.pth')
+        checkpoint = torch.load('../models/model_feed_forward.pth')
 
         self.feedforward.load_state_dict(checkpoint['model_state_dict'])
+        self.feedforward.eval()
 
 
     def __call__(self, current_date, ):
@@ -59,14 +62,13 @@ class Bot_FeedForward:
             if self.environment.get_price(stock, current_date) == 0:
                 continue
 
-            stock_df['Volume'] = stock_df['Volume'] / 10000.
             stock_df = stock_df.drop(self.columns_to_drop, axis=1)
-            data_tensor = torch.tensor(stock_df.values[:, 1:].astype(float), dtype=torch.float32)
+            data_tensor = torch.tensor(stock_df.values.astype(float), dtype=torch.float32)
             data_tensor, norm_divisor = normalize_prices(data_tensor)
             prediction = self.feedforward(data_tensor.contiguous().view(-1)).item()
-            if prediction >= 1.005 and prediction < 1.1:
+            if prediction >= 1.00001:
                 consider_buy.append((stock, prediction))
-            if prediction <= 0.995 and prediction > 0.9:
+            if prediction <= 0.95:
                 consider_sell.append((stock, prediction))
         consider_buy = sorted(consider_buy, key=lambda x: x[1], reverse=True)
         consider_sell = sorted(consider_sell, key=lambda x: x[1])
@@ -83,11 +85,9 @@ class Bot_FeedForward:
         for i in range(num_stocks):
             stock = consider_buy[i][0]
             weight = (((consider_buy[i])[1] - 1) / sum_of_yields)
-            #rnd_factor = torch.randint(5, 15, (1,)).item() / 10
+            rnd_factor = torch.randint(5, 15, (1,)).item() / 10
             price = self.environment.get_price(stock, current_date)
-            #amount = int((weight * rnd_factor * spending) / price)
-            amount = int((weight * spending) / price)
-
+            amount = int((weight * rnd_factor * spending) / price)
 
             if amount > 0:
                 output.append(['buy', stock, amount])

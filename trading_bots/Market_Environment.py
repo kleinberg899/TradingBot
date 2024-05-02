@@ -1,8 +1,6 @@
-import Bot_LinearRegression as Bot
-import Portfolio
 import pandas as pd
 from pandas import read_csv
-import trading_bot_linear_regression
+from trading_bots import Portfolio
 
 
 def date_to_string(year, month, day):
@@ -58,6 +56,8 @@ class Market_Environment:
         num_rows = stock_data.shape[0]
         if num_rows <= 0:
             return None
+        stock_data.rename(columns={stock_data.columns[0]: 'Date'}, inplace=True)
+        stock_data['Date'] = pd.to_datetime(stock_data['Date'])
         close_value = stock_data.loc[stock_data['Date'] == date, 'Close'].values
         if close_value.shape[0] > 0:
             return close_value[0]
