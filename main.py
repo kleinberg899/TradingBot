@@ -1,6 +1,4 @@
-import datetime
-import Simple_Environment as Env
-import Bot_LinearRegression
+from trading_bots import Simple_Environment as Env
 import pandas as pd
 
 def date_to_string(year, month, day):

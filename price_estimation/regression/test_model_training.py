@@ -19,7 +19,7 @@ stocks = [
 
 # Hyperparameters
 
-from price_estimation.More_Complex_Timeseries_NN import Model
+from price_estimation.regression.More_Complex_Timeseries_NN import Model
 context_size = 365
 dist_target_from_context = 7
 epochs = 1
@@ -72,7 +72,7 @@ optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 loss_fn = MeanAbsolutePercentageError()
 
 # Lade das gespeicherte Modell und die zugehörigen Parameter
-checkpoint = torch.load('../models/model_feed_forward.pth')
+checkpoint = torch.load('../../models/model_feed_forward.pth')
 
 # Lade das Modell
 model.load_state_dict(checkpoint['model_state_dict'])
@@ -166,4 +166,4 @@ torch.save({
     'model_state_dict': model.state_dict(),
     'optimizer_state_dict': optimizer.state_dict(),
     'losses': losses
-}, '../models/model_feed_forward.pth')
+}, '../../models/model_feed_forward.pth')

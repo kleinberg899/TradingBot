@@ -1,6 +1,10 @@
 from trading_bot_linear_regression import Bot_LinearRegression
+from trading_bot_feedfoward_classification import Bot_FeedForward_Classificaton
 from Market_Environment import Market_Environment
 from trading_bot_feedfoward import Bot_FeedForward
+import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib.dates import AutoDateFormatter, AutoDateLocator, MonthLocator, DateFormatter
 stocks = [
             "ADS.DE", "AIR.DE", "ALV.DE", "BAS.DE", "BAYN.DE", "BEI.DE", "BMW.DE", "BNR.DE", "CBK.DE",# "DTG.DE",
             # "CON.DE", "P911.DE","SHL.DE",
@@ -36,10 +40,14 @@ def print_bot_state(bot, env, show_portfolio = False):
     if show_portfolio:
         print(f"Balance: {env.get_my_balance(bot):.2f}, {list}\n")
 def main():
+
+
     print("Init:")
-    trading_market = Market_Environment(path, 2022, 2, 4, 2024,4,15)
-    #bot1 = Bot_LinearRegression(path, stocks, trading_market)
-    #trading_market.create_agent(bot1, 100_000)
+    trading_market = Market_Environment(path, 2022, 1, 2, 2024,4,15)
+
+
+    bot1 = Bot_FeedForward_Classificaton(path, stocks, trading_market)
+    trading_market.create_agent(bot1, 100_000)
 
     bot2 = Bot_FeedForward(path, stocks, trading_market)
     trading_market.create_agent(bot2, 100_000)
@@ -50,6 +58,12 @@ def main():
     #bot4 = Bot_LinearRegression(path, stocks, trading_market, name='Bot_POLY_15', degree=15)
     #trading_market.create_agent(bot4, 100_000)
 
+    list_1 = []
+    list_2 = []
+    list_3 = []
+    plt.show(block=False)
+    datetimes = pd.date_range(start='2022-01-02', periods=1)
+
 
     print("\n\n")
     print("----------")
@@ -57,12 +71,47 @@ def main():
     print("----------")
     for bot in trading_market.agents:
         print_bot_state(bot, trading_market)
-    for i in range(900):
+    plt.figure()
+    list_1.append(trading_market.calculate_portfolio_value(bot1))
+    list_2.append(trading_market.calculate_portfolio_value(bot2))
+    list_3.append(trading_market.calculate_portfolio_value(bot3))
+    plt.plot(datetimes, list_1, label=bot1.name, color='blue')
+    plt.plot(datetimes, list_2, label=bot2.name, color='green')
+    plt.plot(datetimes, list_3, label=bot3.name, color='red')
+    plt.axhline(y=100000, color='gray', linestyle='--')
+    plt.gca().xaxis.set_major_locator(MonthLocator())
+    plt.gca().xaxis.set_major_formatter(DateFormatter('%b\n%Y'))
+    plt.legend()
+
+    trading_market.simulate_step()
+    for i in range(1000):
         print(i, trading_market.simulated_date)
         trading_market.simulate_step()
+
+        list_1.append(trading_market.calculate_portfolio_value(bot1))
+        list_2.append(trading_market.calculate_portfolio_value(bot2))
+        list_3.append(trading_market.calculate_portfolio_value(bot3))
+        new_datetime = datetimes[-1] + pd.Timedelta(days=1)
+        datetimes = datetimes.append(pd.Index([new_datetime]))
+        plt.plot(datetimes, list_1, label='List1', color='blue')
+        plt.plot(datetimes, list_2, label='List2', color='green')
+        plt.plot(datetimes, list_3, label='List3', color='red')
+        plt.axhline(y=100000, color='gray', linestyle='--', label='100k')
+        min_val = min(min(list_1), min(list_2), min(list_3))
+        max_val = max(max(list_1), max(list_2), max(list_3))
+
+        if min_val < 50000 or max_val > 150000:
+            plt.ylim(20000, 200000)
+        elif min_val < 90000 or max_val > 110000:
+            plt.ylim(60000, 140000)
+        else:
+            plt.ylim(90000, 110000)
+        plt.pause(0.01)
+
         for bot in trading_market.agents:
             if True:
                 print_bot_state(bot, trading_market, show_portfolio=True)
+    plt.show()
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main()

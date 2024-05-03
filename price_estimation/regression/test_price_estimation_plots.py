@@ -1,12 +1,7 @@
-from FeedforwardNN import Model
-
-import torch
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pandas import read_csv
 import matplotlib.pyplot as plt
-import datetime
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 
