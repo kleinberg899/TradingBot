@@ -41,7 +41,7 @@ model = Model(feature_size, context_size)
 
 
 
-start_date = datetime.datetime(2017, 3, 1)
+start_date = datetime.datetime(2015, 3, 1)
 end_date = datetime.datetime(2021, 12, 30)
 
 # drop these columns of the csv's to not include certain parameters in training data
@@ -138,7 +138,7 @@ for epoch in range(epochs):
         #print(yb.shape)
         prediction = model.forward(xb)
 
-        loss = F.cross_entropy(prediction, yb)
+        loss = F.cross_entropy(prediction, yb.long())
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
         optimizer.step()
